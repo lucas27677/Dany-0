@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feliz Aniversário Mágico</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Playful & Magical Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Pacifico&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind Theme Extension -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mewni: {
+                            purple: '#2E1065',
+                            purpleLight: '#5B21B6',
+                            pink: '#FF5E97',
+                            pinkLight: '#FFB3D1',
+                            mint: '#A7F3D0',
+                            yellow: '#FDE047',
+                            gold: '#F59E0B',
+                            portal: '#818CF8'
+                        }
+                    },
+                    fontFamily: {
+                        magic: ['"Fredoka"', 'cursive'],
+                        script: ['"Pacifico"', 'cursive'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS styling -->
+    <style>
+        html { scroll-behavior: smooth; }
+        body {
+            background: linear-gradient(135deg, #1e0936 0%, #2b1055 50%, #17082a 100%);
+            color: #F8FAFC;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Floating background canvas */
+        #bgCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Mewni Glass Card Style */
+        .mewni-card {
+            background: rgba(46, 16, 101, 0.65);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(255, 94, 151, 0.35);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(255, 94, 151, 0.15);
+        }
+
+        /* Wand Glow effect */
+        .wand-glow {
+            box-shadow: 0 0 25px rgba(255, 94, 151, 0.6), 0 0 50px rgba(253, 224, 71, 0.3);
+        }
+
+        /* Portal Border Effect */
+        .portal-border {
+            border: 3px solid #818CF8;
+            box-shadow: 0 0 15px #818CF8, inset 0 0 15px #818CF8;
+            animation: portalPulse 3s infinite alternate;
+        }
+
+        @keyframes portalPulse {
+            0% { box-shadow: 0 0 15px #818CF8, inset 0 0 15px #818CF8; }
+            100% { box-shadow: 0 0 30px #FF5E97, inset 0 0 25px #FF5E97; }
+        }
+
+        /* Float Animation */
+        @keyframes floatingItem {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        .animate-float {
+            animation: floatingItem 4s ease-in-out infinite;
+        }
+
+        /* Polaroid Photo Card */
+        .star-polaroid {
+            background: #FFFFFF;
+            color: #1E293B;
+            padding: 12px 12px 35px 12px;
+            border-radius: 12px;
+            box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+        }
+        .star-polaroid:hover {
+            transform: scale(1.05) rotate(0deg) translateY(-8px) !important;
+            box-shadow: 0 20px 40px rgba(255, 94, 151, 0.5);
+            z-index: 20;
+        }
+
+        /* Cheek Marks Badge */
+        .cheek-mark {
+            display: inline-block;
+            color: #FF5E97;
+            filter: drop-shadow(0 0 6px rgba(255,94,151,0.8));
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e0936; }
+        ::-webkit-scrollbar-thumb { background: #FF5E97; border-radius: 10px; }
+    </style>
+</head>
+<body class="relative text-slate-100 selection:bg-mewni-pink selection:text-white">
+
+    <!-- Interactive background canvas (Stars, Portal Rings, Hearts) -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Background Audio Element -->
+    <audio id="bgMusic" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a82d02.mp3?filename=fantasy-fairytale-magic-10492.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Floating Audio Control Player -->
+    <div class="fixed top-5 right-5 z-50">
+        <button id="musicBtn" onclick="toggleAudio()" class="flex items-center gap-3 bg-mewni-purple/80 hover:bg-mewni-purple border-2 border-mewni-pink/50 text-white px-4 py-2.5 rounded-full shadow-lg backdrop-blur-md transition-all group">
+            <div class="w-8 h-8 rounded-full bg-mewni-pink flex items-center justify-center text-white group-hover:rotate-180 transition-transform duration-700 shadow">
+                <i id="musicIcon" class="fas fa-wand-magic-sparkles text-sm"></i>
+            </div>
+            <div class="text-left hidden sm:block pr-1">
+                <span class="block text-[10px] font-bold tracking-widest text-mewni-pinkLight uppercase">Música Mágica</span>
+                <span id="musicStatus" class="text-xs font-semibold text-white">Ativar Magia 🎵</span>
+            </div>
+        </button>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
+
+        <!-- HEADER / HERO -->
+        <header class="text-center my-8 md:my-14 relative">
+            
+            <div class="inline-flex items-center gap-2 bg-mewni-pink/20 border border-mewni-pink/40 px-4 py-1.5 rounded-full mb-4 backdrop-blur-md">
+                <span class="cheek-mark">💖</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-mewni-pinkLight">Nível de Magia: Infinito ✨</span>
+                <span class="cheek-mark">💖</span>
+            </div>
+
+            <!-- Title inspired by Star Butterfly -->
+            <h1 class="font-magic text-4xl sm:text-6xl md:text-7xl font-bold text-white mb-3 tracking-wide drop-shadow-[0_5px_15px_rgba(255,94,151,0.6)]">
+                Feliz Aniversário! <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-mewni-pink via-mewni-yellow to-mewni-mint font-script text-5xl sm:text-7xl">
+                    Minha Garota Mágica 👑
+                </span>
+            </h1>
+
+            <p class="font-magic text-xl sm:text-2xl text-mewni-pinkLight max-w-2xl mx-auto my-4">
+                "Você não precisa de uma varinha mágica para fazer o mundo parecer incrível..."
+            </p>
+
+            <!-- Card Intro -->
+            <div class="mewni-card max-w-2xl mx-auto p-6 md:p-8 rounded-3xl mt-6 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-mewni-pink/20 rounded-full blur-2xl"></div>
+                <p class="text-sm sm:text-base leading-relaxed text-slate-200 font-medium">
+                    Preparei esta dimensão especial para celebrar o seu dia! Uma página cheia de cores, brilho e cartas para lembrar o quanto sua energia é contagiante e o quanto você deixa tudo ao seu redor mais leve e divertido. 💖🌟
+                </p>
+            </div>
+        </header>
+
+       
+            </div>
+        </section>
+
+        <!-- ESPELHO MÁGICO (INTERACTIVE COMPLIMENT GENERATOR) -->
+        <section class="my-16">
+            <div class="mewni-card p-8 rounded-3xl portal-border text-center relative max-w-2xl mx-auto">
+                <div class="w-16 h-16 bg-mewni-portal/30 border-2 border-mewni-portal rounded-full flex items-center justify-center text-3xl mx-auto mb-4 animate-float">
+                    🪞
+                </div>
+                
+                <span class="text-xs font-bold uppercase tracking-widest text-mewni-portal">Item Mágico Interativo</span>
+                <h2 class="font-magic text-3xl font-bold text-white mt-1 mb-3">O Espelho Mágico de Mewni</h2>
+                <p class="text-xs sm:text-sm text-slate-300 mb-6">Clique no botão para consultar o Espelho Mágico e ver um elogio surpresa sobre você!</p>
+
+                <!-- Mirror Display Box -->
+                <div class="bg-black/40 border border-mewni-pink/40 p-5 rounded-2xl mb-6 min-h-[90px] flex items-center justify-center shadow-inner">
+                    <p id="mirrorText" class="font-magic text-lg sm:text-xl text-mewni-yellow font-medium italic">
+                        "Clique abaixo para ativar a magia do espelho..."
+                    </p>
+                </div>
+
+                <button onclick="generateCompliment()" class="bg-gradient-to-r from-mewni-pink to-mewni-purpleLight hover:opacity-90 text-white font-magic font-bold text-base px-8 py-3 rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all wand-glow">
+                    ✨ Consultar Espelho Mágico
+                </button>
+            </div>
+        </section>
+        <!-- GALERIA MÁGICA DE FOTOS -->
+        <section class="my-16">
+            <div class="text-center mb-10">
+                <span class="text-xs font-bold uppercase tracking-widest text-mewni-mint bg-mewni-mint/10 border border-mewni-mint/30 px-3 py-1 rounded-full">Tesouros Dimensional</span>
+                <h2 class="font-magic text-3xl sm:text-4xl text-white font-bold mt-2">Galeria Dimensional 📸✨</h2>
+                <p class="text-xs sm:text-sm text-slate-300">Alguns registros incríveis (substitua pelas fotos dela!)</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 px-2">
+                
+                <!-- Photo 1 -->
+                <div class="star-polaroid -rotate-2 cursor-pointer" onclick="openPhoto('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80', 'Seu sorriso radiante que ilumina qualquer lugar! ✨')">
+                    <div class="absolute -top-3 left-3 text-xl">🎀</div>
+                    <div class="h-64 overflow-hidden rounded-lg bg-slate-100 mb-3">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80" alt="Foto Mágica 1" class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-script text-xl text-mewni-purple text-center">Magia Pura ✨</p>
+                </div>
+
+                <!-- Photo 2 -->
+                <div class="star-polaroid rotate-3 cursor-pointer sm:mt-4" onclick="openPhoto('https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80', 'Seu jeito espontâneo e autêntico de ser! 🌸')">
+                    <div class="absolute -top-3 right-3 text-xl">🦄</div>
+                    <div class="h-64 overflow-hidden rounded-lg bg-slate-100 mb-3">
+                        <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80" alt="Foto Mágica 2" class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-script text-xl text-mewni-purple text-center">Espontânea 💖</p>
+                </div>
+
+                <!-- Photo 3 -->
+                <div class="star-polaroid -rotate-1 cursor-pointer" onclick="openPhoto('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80', 'Comemorando seu dia com muito brilho! 👑')">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 text-xl">🌟</div>
+                    <div class="h-64 overflow-hidden rounded-lg bg-slate-100 mb-3">
+                        <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80" alt="Foto Mágica 3" class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-script text-xl text-mewni-purple text-center">Incrível 👑</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PORTAL CELEBRATION BUTTON -->
+        <section class="my-20 text-center">
+            <div class="mewni-card p-8 sm:p-12 rounded-3xl border-2 border-mewni-pink max-w-2xl mx-auto relative overflow-hidden wand-glow">
+                
+                <div class="text-5xl mb-3 animate-bounce">
+                    🔮
+                </div>
+
+                <h3 class="font-magic text-3xl sm:text-4xl font-bold text-white mb-2">Abrir Portal Dimensional!</h3>
+                <p class="text-slate-300 text-sm sm:text-base mb-6">
+                    Aperte o botão para lançar um feitiço de celebração e comemorar o seu dia!
+                </p>
+
+                <button onclick="launchPortalMagic()" class="bg-gradient-to-r from-mewni-yellow via-mewni-pink to-mewni-portal text-slate-950 font-magic font-bold text-lg px-8 py-4 rounded-full shadow-xl hover:scale-110 active:scale-95 transition-all">
+                    ✨ DISPARAR FEITIÇO DE ANIVERSÁRIO! 🎉
+                </button>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="text-center py-8 border-t border-white/10 text-slate-400 text-xs">
+            <p class="font-script text-2xl text-mewni-pinkLight">Feito especialmente para o seu aniversário 💖</p>
+            <p class="mt-1">Inspirado na série "Star vs. As Forças do Mal"</p>
+            <p class="mt-3 text-sm font-semibold text-mewni-yellow tracking-wider">Lucas Novaes - 2026</p>
+        </footer>
+
+    </div>
+
+    <!-- MODAL DOS FEITIÇOS / CARTAS -->
+    <div id="spellModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="mewni-card max-w-lg w-full p-6 sm:p-8 rounded-3xl border-2 border-mewni-pink shadow-2xl relative transform scale-95 transition-transform duration-300" id="spellModalContent">
+            
+            <button onclick="closeSpell()" class="absolute top-4 right-4 text-slate-300 hover:text-mewni-pink text-xl w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="text-center mb-4">
+                <span id="modalHeader" class="text-xs font-bold uppercase tracking-wider text-mewni-yellow"></span>
+                <h3 id="modalTitle" class="font-magic text-2xl sm:text-3xl font-bold text-white mt-1"></h3>
+            </div>
+
+            <div class="bg-black/30 p-5 rounded-2xl border border-white/10 mb-6 max-h-72 overflow-y-auto">
+                <p id="modalBody" class="text-slate-200 leading-relaxed font-sans text-sm sm:text-base whitespace-pre-line"></p>
+            </div>
+
+            <div class="text-center">
+                <button onclick="closeSpell()" class="bg-mewni-pink hover:bg-mewni-pinkLight text-slate-950 px-6 py-2 rounded-full font-magic font-bold text-xs uppercase tracking-wider transition-colors shadow">
+                    Guardar no Livro de Feitiços 💖
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE AMPLIAR FOTO -->
+    <div id="photoModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300" onclick="closePhoto()">
+        <div class="max-w-2xl w-full text-center relative" onclick="event.stopPropagation()">
+            <button onclick="closePhoto()" class="absolute -top-10 right-0 text-white hover:text-mewni-pink text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="star-polaroid inline-block max-w-full">
+                <img id="modalImg" src="" alt="Ampliada" class="max-h-[70vh] rounded-lg object-contain">
+                <p id="modalCaption" class="font-script text-2xl text-mewni-purple mt-3"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* === DADOS DAS CARTAS / FEITIÇOS === */
+        const spellContents = {
+            1: {
+                header: "Feitiço #1 • Aura do Sorriso",
+                title: "Seu Sorriso Radiante 💖",
+                body: `Sabe aquele tipo de sorriso que ilumina qualquer lugar instantaneamente? É exatamente o que acontece quando você sorri.
+
+Desde que começamos a conversar mais, é muito massa ver como seu jeito alegre e descontraído deixa qualquer momento mais gostoso. Não importa como foi o dia, conversar com você sempre traz uma sensação leve e boa.
+
+Que o seu novo ano seja recheado de sorrisos gigantes e momentos especiais!`
+            },
+            2: {
+                header: "Feitiço #2 • Energia de Mewni",
+                title: "O Que Admiro em Você 🌟",
+                body: `Se tem algo que chama atenção em você logo de cara, é a sua autenticidade.
+
+Você é segura do seu estilo, tem um gosto incrível para as coisas e ao mesmo tempo possui um carinho muito massa com quem tá ao seu redor. É muito bonito ver a energia que você coloca no que gosta.
+
+Tenho um carinho enorme por você e fico muito feliz por compartilhar tantos momentos divertidos do seu lado!`
+            },
+            3: {
+                header: "Feitiço #3 • Desejo Dimensional",
+                title: "Seu Dia Especial 🎂✨",
+                body: `Hoje o dia é todinho seu!
+
+Desejo que o seu novo ciclo venha repleto de viagens incríveis, comidinhas gostosas, boas músicas, gargalhadas até a barriga doer e todos os seus sonhos se realizando.
+
+Que você continue brilhando e espalhando essa sua energia mágica por onde passar. Feliz Aniversário!`
+            }
+        };
+
+        /* === ELOGIOS DO ESPELHO MÁGICO === */
+        const mirrorCompliments = [
+            "✨ O Espelho Mágico revela: Seu sorriso tem um brilho único que contagia todo mundo!",
+            "🌸 O Espelho Mágico revela: Seu gosto musical e seu estilo são dignos de uma rainha de Mewni!",
+            "💖 O Espelho Mágico revela: Estar perto de você deixa qualquer dia comum mil vezes mais divertido!",
+            "🦄 O Espelho Mágico revela: Sua energia autêntica é um dos seus maiores superpoderes!",
+            "🌟 O Espelho Mágico revela: Você tem a capacidade de transformar momentos simples em lembranças incríveis!"
+        ];
+
+        function generateCompliment() {
+            const display = document.getElementById('mirrorText');
+            const randomIndex = Math.floor(Math.random() * mirrorCompliments.length);
+            
+            display.style.opacity = '0';
+            setTimeout(() => {
+                display.innerText = mirrorCompliments[randomIndex];
+                display.style.opacity = '1';
+            }, 200);
+        }
+
+        /* === FUNÇÕES DOS MODAIS === */
+        function openSpell(id) {
+            const data = spellContents[id];
+            if (!data) return;
+
+            document.getElementById('modalHeader').innerText = data.header;
+            document.getElementById('modalTitle').innerText = data.title;
+            document.getElementById('modalBody').innerText = data.body;
+
+            const modal = document.getElementById('spellModal');
+            const content = document.getElementById('spellModalContent');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeSpell() {
+            const modal = document.getElementById('spellModal');
+            const content = document.getElementById('spellModalContent');
+
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function openPhoto(src, caption) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('modalCaption').innerText = caption;
+
+            const modal = document.getElementById('photoModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+            }, 10);
+        }
+
+        function closePhoto() {
+            const modal = document.getElementById('photoModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        /* === PLAYER DE MÚSICA === */
+        let playing = false;
+        function toggleAudio() {
+            const audio = document.getElementById('bgMusic');
+            const icon = document.getElementById('musicIcon');
+            const status = document.getElementById('musicStatus');
+
+            if (playing) {
+                audio.pause();
+                icon.className = "fas fa-wand-magic-sparkles text-sm";
+                status.innerText = "Ativar Magia 🎵";
+            } else {
+                audio.play();
+                icon.className = "fas fa-wand-magic-sparkles text-sm animate-spin text-mewni-yellow";
+                status.innerText = "Pausar Músicas ⏸️";
+            }
+            playing = !playing;
+        }
+
+        /* === CANVAS DE ELEMENTOS MÁGICOS FLUTUANTES === */
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class MagicParticle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = height + Math.random() * 50;
+                this.size = Math.random() * 8 + 4;
+                this.speedY = Math.random() * 0.8 + 0.4;
+                this.speedX = Math.sin(Math.random() * Math.PI) * 0.4;
+                this.opacity = Math.random() * 0.7 + 0.3;
+                this.color = ['#FF5E97', '#FDE047', '#A7F3D0', '#818CF8'][Math.floor(Math.random() * 4)];
+                this.angle = Math.random() * 360;
+                this.spin = (Math.random() - 0.5) * 0.03;
+            }
+
+            update() {
+                this.y -= this.speedY;
+                this.angle += this.spin;
+                this.x += Math.sin(this.angle) * 0.4;
+
+                if (this.y < -30) this.reset();
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                for (let i = 0; i < 4; i++) {
+                    ctx.lineTo(Math.cos((18 + i * 90) * Math.PI / 180) * this.size, Math.sin((18 + i * 90) * Math.PI / 180) * this.size);
+                    ctx.lineTo(Math.cos((54 + i * 90) * Math.PI / 180) * (this.size / 2), Math.sin((54 + i * 90) * Math.PI / 180) * (this.size / 2));
+                }
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        for (let i = 0; i < 35; i++) {
+            particles.push(new MagicParticle());
+        }
+
+        function animateBg() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateBg);
+        }
+
+        animateBg();
+
+        /* === EXPLOSÃO MÁGICA DE CELEBRAÇÃO === */
+        function launchPortalMagic() {
+            for (let i = 0; i < 50; i++) {
+                const particle = new MagicParticle();
+                particle.x = width / 2;
+                particle.y = height / 2;
+                particle.speedY = (Math.random() - 0.5) * 10;
+                particle.speedX = (Math.random() - 0.5) * 10;
+                particles.push(particle);
+            }
+            alert("✨ Feitiço disparado! Que seu dia seja fantástico! 🎉");
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Amazing Birthday</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Tech & Handwriting -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,400&family=Reenie+Beanie&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind Theme Extension -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        spidey: {
+                            red: '#E50914',
+                            redGlow: '#FF2A3B',
+                            blue: '#00D8FF',
+                            blueDark: '#0A192F',
+                            oscorpCyan: '#00F0FF',
+                            yellow: '#FFD700',
+                            darkBg: '#050B14'
+                        }
+                    },
+                    fontFamily: {
+                        tech: ['"Chakra Petch"', 'sans-serif'],
+                        handwritten: ['"Reenie Beanie"', 'cursive'],
+                        sans: ['"Space Grotesk"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: #050B14;
+            color: #E2E8F0;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* Canvas Overlay for Web Shooter */
+        #webCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 40;
+        }
+
+        /* Glitch & HUD Grid Overlay */
+        .hud-grid {
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .hud-card {
+            background: rgba(10, 25, 47, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(0, 240, 255, 0.08);
+            position: relative;
+        }
+        .hud-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 8px; height: 8px;
+            border-top: 2px solid #00F0FF;
+            border-left: 2px solid #00F0FF;
+        }
+        .hud-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; right: 0; width: 8px; height: 8px;
+            border-bottom: 2px solid #E50914;
+            border-right: 2px solid #E50914;
+        }
+
+        /* Camera Viewfinder Crosshair Effect */
+        .viewfinder-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: rgba(255, 255, 255, 0.4);
+            pointer-events: none;
+        }
+
+        /* Polaroid Photo Card */
+        .polaroid-card {
+            background: #FAFAFA;
+            color: #0F172A;
+            padding: 12px 12px 30px 12px;
+            border-radius: 4px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform-origin: center;
+        }
+        .polaroid-card:hover {
+            transform: scale(1.06) rotate(0deg) translateY(-8px) !important;
+            box-shadow: 0 20px 45px rgba(0, 240, 255, 0.4);
+            z-index: 30;
+        }
+
+        /* Spidey Sense Pulsing Effect */
+        @keyframes spideyPulse {
+            0% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0.8), 0 0 0 0 rgba(0, 240, 255, 0.5); }
+            50% { box-shadow: 0 0 25px 10px rgba(229, 9, 20, 0.4), 0 0 35px 20px rgba(0, 240, 255, 0.3); }
+            100% { box-shadow: 0 0 0 0 rgba(229, 9, 20, 0), 0 0 0 0 rgba(0, 240, 255, 0); }
+        }
+        .spidey-sense-btn {
+            animation: spideyPulse 2s infinite;
+        }
+
+        /* Screen Shake Keyframe */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-6px, 6px); }
+            40% { transform: translate(6px, -6px); }
+            60% { transform: translate(-4px, -4px); }
+            80% { transform: translate(4px, 4px); }
+        }
+        .shake-active {
+            animation: shake 0.4s ease-in-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #050B14; }
+        ::-webkit-scrollbar-thumb { background: #E50914; border-radius: 4px; }
+    </style>
+</head>
+<body class="hud-grid relative min-h-screen text-slate-100 selection:bg-spidey-red selection:text-white" onclick="triggerWebShot(event)">
+
+    <!-- Audio do disparo de teia -->
+    <audio id="webSound" src="Homem.mp3" preload="auto"></audio>
+
+    <!-- Interactive Web Shooter Canvas -->
+    <canvas id="webCanvas"></canvas>
+
+    <!-- HUD Header & Camera Lens Controls -->
+    <header class="sticky top-0 z-30 bg-spidey-darkBg/90 backdrop-blur-md border-b border-spidey-oscorpCyan/30 px-4 py-3">
+        <div class="container mx-auto flex justify-between items-center">
+            
+            <!-- Camera & Oscorp Logo HUD -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-spidey-blueDark border border-spidey-oscorpCyan flex items-center justify-center text-spidey-oscorpCyan shadow-[0_0_10px_rgba(0,240,255,0.4)]">
+                    <i class="fas fa-camera-retro text-lg"></i>
+                </div>
+                <div>
+                    <div class="text-[10px] font-tech text-spidey-oscorpCyan tracking-widest uppercase">YASHICA FX-3 SUPER 2000</div>
+                    <div class="text-xs font-bold font-tech text-slate-200 flex items-center gap-2">
+                        <span>ISO 800</span>
+                        <span class="text-spidey-red">f/1.8</span>
+                        <span>1/1000s</span>
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Controls -->
+            <div class="flex items-center gap-2" onclick="event.stopPropagation()">
+                <button id="audioToggleBtn" onclick="toggleAudio()" class="hud-card px-3 py-1.5 rounded text-xs font-tech text-spidey-oscorpCyan hover:border-spidey-red transition-all flex items-center gap-2">
+                    <i id="audioIcon" class="fas fa-volume-high text-spidey-oscorpCyan"></i>
+                    <span id="audioStatus">Som On 🔊</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- MAIN HERO CONTENT -->
+    <main class="container mx-auto px-4 py-8 max-w-5xl">
+
+        <!-- NYC Viewfinder Hero Banner -->
+        <section class="relative my-6 p-6 sm:p-12 hud-card rounded-2xl overflow-hidden text-center border-spidey-oscorpCyan/40">
+            
+            <!-- Viewfinder Corner Guides -->
+            <div class="viewfinder-corner top-3 left-3 border-t-2 border-l-2"></div>
+            <div class="viewfinder-corner top-3 right-3 border-t-2 border-r-2"></div>
+            <div class="viewfinder-corner bottom-3 left-3 border-b-2 border-l-2"></div>
+            <div class="viewfinder-corner bottom-3 right-3 border-b-2 border-r-2"></div>
+
+            <!-- Top Oscorp Field Tag -->
+            <div class="inline-flex items-center gap-2 bg-spidey-red/20 border border-spidey-red/50 px-3 py-1 rounded-full text-xs font-tech text-spidey-redGlow mb-4">
+                <i class="fas fa-spider text-sm"></i>
+                <span>OSCORP ARCHIVE // SUBJECT: ANIVERSARIANTE INCRÍVEL</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-bold font-tech text-white uppercase tracking-tight mb-2">
+                FELIZ ANIVERSÁRIO, <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-spidey-oscorpCyan via-spidey-blue to-spidey-redGlow drop-shadow-[0_0_15px_rgba(0,240,255,0.6)]">
+                    Minha MJ! 🕷️
+                </span>
+            </h1>
+
+            <p class="font-handwritten text-3xl sm:text-4xl text-spidey-oscorpCyan max-w-2xl mx-auto my-3 transform -rotate-1">
+                "Espero que você tenha esperança. O mundo precisa disso. E mesmo que falhemos, que melhor maneira de viver existe?" 
+            </p>
+
+            <p class="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto font-sans leading-relaxed mt-4">
+                Bem-vinda ao seu site estilo o nosso homem-aranha favorito. Um espaço montado especialmente para celebrar o seu aniversário e todas as coisas incríveis que tornam você única!
+            </p>
+
+            <!-- Quick Hint -->
+            <div class="mt-6 text-[11px] font-tech text-slate-400 bg-black/40 inline-block px-4 py-1.5 rounded-full border border-white/10">
+                <i class="fas fa-hand-pointer text-spidey-oscorpCyan mr-1"></i> DICA: Clique em qualquer lugar da tela para disparar teias!
+            </div>
+
+        </section>
+
+        <!-- SPIDEY SENSE ALARM BUTTON -->
+        <section class="my-12 text-center" onclick="event.stopPropagation()">
+            <div class="hud-card p-6 rounded-2xl max-w-xl mx-auto border-spidey-red/50">
+                <div class="text-xs font-tech text-spidey-red uppercase tracking-widest mb-1">
+                    <i class="fas fa-bolt mr-1"></i> DETECTOR DE QUALIDADES
+                </div>
+                <h3 class="font-tech text-xl text-white font-bold mb-3">Sua Presença Ilumina Qualquer Lugar ✨</h3>
+                
+                <button onclick="triggerSpideySense()" class="spidey-sense-btn bg-gradient-to-r from-spidey-red to-spidey-redGlow text-white font-tech font-bold text-sm uppercase tracking-wider px-8 py-3.5 rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all">
+                    <i class="fas fa-radiation mr-2"></i> Ativar Sentido Aranha de Aniversário!
+                </button>
+            </div>
+        </section>
+
+        <!-- PETER'S NOTEBOOK & FIELD LETTERS -->
+        <section class="my-16" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <span class="text-xs font-tech text-spidey-oscorpCyan uppercase tracking-widest">DOSSIÊ ESPECIAL // PETER'S NOTES</span>
+                    <h2 class="font-tech text-2xl sm:text-3xl text-white font-bold">Cartas & Anotações de Campo 📜</h2>
+                </div>
+                <div class="text-xs font-tech text-slate-400 hidden sm:block">
+                    CONFIDENTIAL / CLASSIFIED
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Card 1 -->
+                <div class="hud-card p-6 rounded-xl hover:border-spidey-oscorpCyan transition-all cursor-pointer group" onclick="openNote(1)">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-[10px] font-tech text-spidey-oscorpCyan uppercase">Anotação #01</span>
+                        <i class="fas fa-sticky-note text-spidey-red text-sm group-hover:rotate-12 transition-transform"></i>
+                    </div>
+                    <h3 class="font-tech text-lg font-bold text-white mb-2">Energia Unstoppable ⚡</h3>
+                    <p class="text-xs text-slate-300 line-clamp-3">Sabe aquele tipo de presença que muda o clima do ambiente pra melhor na mesma...</p>
+                    <div class="mt-4 pt-3 border-t border-white/10 text-right">
+                        <span class="text-xs font-tech text-spidey-oscorpCyan group-hover:underline">Ler Carta Completa →</span>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="hud-card p-6 rounded-xl hover:border-spidey-red transition-all cursor-pointer group" onclick="openNote(2)">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-[10px] font-tech text-spidey-red uppercase">Anotação #02</span>
+                        <i class="fas fa-camera text-spidey-oscorpCyan text-sm group-hover:rotate-12 transition-transform"></i>
+                    </div>
+                    <h3 class="font-tech text-lg font-bold text-white mb-2">Visão Fotográfica 📸</h3>
+                    <p class="text-xs text-slate-300 line-clamp-3">Se eu fosse fotógrafo, você com certeza seria a foto perfeita pra as capas das minhas revistas...</p>
+                    <div class="mt-4 pt-3 border-t border-white/10 text-right">
+                        <span class="text-xs font-tech text-spidey-red group-hover:underline">Ler Carta Completa →</span>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="hud-card p-6 rounded-xl hover:border-spidey-yellow transition-all cursor-pointer group" onclick="openNote(3)">
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-[10px] font-tech text-spidey-yellow uppercase">Anotação #03</span>
+                        <i class="fas fa-star text-spidey-yellow text-sm group-hover:rotate-12 transition-transform"></i>
+                    </div>
+                    <h3 class="font-tech text-lg font-bold text-white mb-2">O Seu Novo Ciclo </h3>
+                    <p class="text-xs text-slate-300 line-clamp-3">Hoje o dia é todo dedicado a você!...</p>
+                    <div class="mt-4 pt-3 border-t border-white/10 text-right">
+                        <span class="text-xs font-tech text-spidey-yellow group-hover:underline">Ler Carta Completa →</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CAMERA GALLERY / POLAROID GRID -->
+        <section class="my-16" onclick="event.stopPropagation()">
+            <div class="text-center mb-10">
+                <span class="text-xs font-tech text-spidey-oscorpCyan uppercase tracking-widest bg-spidey-blueDark border border-spidey-oscorpCyan/30 px-3 py-1 rounded-full">Yashica Camera Snapshot</span>
+                <h2 class="font-tech text-3xl sm:text-4xl text-white font-bold mt-2">Mural de Fotos 🏙️📸</h2>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 px-2">
+                
+                <!-- Polaroid 1 -->
+                <div class="polaroid-card -rotate-2 cursor-pointer" onclick="openPhotoModal('spider.png', 'Seu sorriso que ilumina até o dia mais cinzento da cidade! ')">
+                    <div class="h-64 overflow-hidden rounded bg-slate-900 mb-3 border border-slate-300">
+                        <img src="spider.png" alt="Foto 1" class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-handwritten text-3xl text-slate-800 text-center">Radiante!</p>
+                </div>
+
+                <!-- Polaroid 2 -->
+                <div class="polaroid-card rotate-3 cursor-pointer sm:mt-4" onclick="openPhotoModal('linda.png', 'Sua personalidade autêntica e única que chama atenção de longe!')">
+                    <div class="h-64 overflow-hidden rounded bg-slate-900 mb-3 border border-slate-300">
+                        <img src="linda.png" alt="Foto 2" class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-handwritten text-3xl text-slate-800 text-center">Linda!</p>
+                </div>
+
+                <!-- Polaroid 3 -->
+                <div class="polaroid-card -rotate-1 cursor-pointer" onclick="openPhotoModal('estilo.jpg', 'Celebre seu dia especial sendo a pessoa que faz minhas pupilas dilatarem!')">
+                    <div class="h-64 overflow-hidden rounded bg-slate-900 mb-3 border border-slate-300">
+                        <img src="estilo.jpg" alt="Foto 3" class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-handwritten text-3xl text-slate-800 text-center">Incrível!</p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- GWEN'S SPEECH & MOVIE REFERENCES -->
+        <section class="my-16" onclick="event.stopPropagation()">
+            <div class="hud-card p-8 rounded-2xl border-spidey-yellow/40 relative overflow-hidden">
+                <div class="flex items-center gap-3 mb-3 text-spidey-yellow font-tech text-xs uppercase tracking-widest">
+                    <i class="fas fa-quote-left text-lg"></i>
+                    <span>INSPIRATION // GWEN STACY'S SPEECH</span>
+                </div>
+                
+                <blockquote class="font-sans text-base sm:text-lg text-slate-200 italic leading-relaxed">
+                    "É fácil sentir esperança em um dia bonito como hoje. Mas também haverá dias escuros pela frente... Por isso, segure firme a esperança. Mantenha ela viva. Não importa o quão difícil seja, você precisa ser a luz."
+                </blockquote>
+
+                <div class="mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-xs font-tech text-slate-400">
+                    <span>The Amazing Spider-Man 2</span>
+                    <span class="text-spidey-oscorpCyan">Você é essa luz Dany!</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="mt-20 border-t border-spidey-oscorpCyan/30 bg-spidey-darkBg/90 backdrop-blur-md py-6 text-center relative z-30" onclick="event.stopPropagation()">
+        <div class="container mx-auto px-4">
+            <p class="font-tech text-sm text-slate-400 tracking-wider">
+                <span class="text-spidey-oscorpCyan">&lt;/&gt;</span> Desenvolvido por <span class="text-spidey-red font-bold">Lucas Novaes - 2026</span> 🕷️
+            </p>
+        </div>
+    </footer>
+
+    <!-- MODAL DAS CARTAS / NOTEBOOK -->
+    <div id="noteModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300" onclick="closeNote()">
+        <div class="hud-card max-w-lg w-full p-6 sm:p-8 rounded-2xl border-2 border-spidey-oscorpCyan shadow-2xl relative transform scale-95 transition-transform duration-300" id="noteModalContent" onclick="event.stopPropagation()">
+            
+            <button onclick="closeNote()" class="absolute top-4 right-4 text-slate-400 hover:text-spidey-red text-lg w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="mb-4">
+                <span id="noteHeader" class="text-xs font-tech uppercase tracking-wider text-spidey-oscorpCyan"></span>
+                <h3 id="noteTitle" class="font-tech text-2xl font-bold text-white mt-1"></h3>
+            </div>
+
+            <div class="bg-slate-900/80 p-5 rounded-xl border border-white/10 mb-6 max-h-72 overflow-y-auto">
+                <p id="noteBody" class="text-slate-200 leading-relaxed font-sans text-sm sm:text-base whitespace-pre-line"></p>
+            </div>
+
+            <div class="text-right">
+                <button onclick="closeNote()" class="bg-spidey-red hover:bg-spidey-redGlow text-white px-6 py-2 rounded font-tech text-xs uppercase tracking-wider transition-colors shadow">
+                    Fechar Anotação ✖
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE FOTO AMPLIADA -->
+    <div id="photoModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300" onclick="closePhotoModal()">
+        <div class="max-w-2xl w-full text-center relative" onclick="event.stopPropagation()">
+            <button onclick="closePhotoModal()" class="absolute -top-10 right-0 text-white hover:text-spidey-red text-2xl">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="polaroid-card inline-block max-w-full">
+                <img id="modalImg" src="" alt="Ampliada" class="max-h-[70vh] rounded object-contain">
+                <p id="modalCaption" class="font-handwritten text-3xl text-slate-900 mt-3"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SPIDEY SENSE ALARM -->
+    <div id="spideySenseModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300" onclick="closeSpideySense()">
+        <div class="hud-card max-w-md w-full p-6 rounded-2xl border-2 border-spidey-red text-center relative" onclick="event.stopPropagation()">
+            <div class="w-16 h-16 rounded-full bg-spidey-red/20 border-2 border-spidey-red flex items-center justify-center text-spidey-redGlow text-3xl mx-auto mb-4 animate-bounce">
+                <i class="fas fa-spider"></i>
+            </div>
+            
+            <span class="text-xs font-tech text-spidey-red uppercase tracking-widest">ALERTA DE SENTIDO ARANHA</span>
+            <h3 class="font-tech text-2xl font-bold text-white my-2">SUPERPODERES DETECTADOS!</h3>
+            
+            <p class="text-xs text-slate-300 mb-6 leading-relaxed font-sans">
+                O sexto sentido detectou a presença de alguém que onde chega melhora o ambiente, uma garota linda que possui o sorriso que dispara outros apenas surgindo!
+            </p>
+
+            <button onclick="closeSpideySense()" class="bg-gradient-to-r from-spidey-red to-spidey-redGlow text-white font-tech font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded-lg shadow">
+                Entendido!
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <script>
+        /* ============================================================
+           1. AUDIO DO DISPARO DA TEIA (Homem.mp3)
+           ============================================================ */
+        let audioMuted = false;
+
+        function playWebAudio() {
+            if (audioMuted) return;
+            const audio = document.getElementById('webSound');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => {
+                    console.log("Aguardando interação do usuário para reproduzir áudio.");
+                });
+            }
+        }
+
+        function toggleAudio() {
+            audioMuted = !audioMuted;
+            const status = document.getElementById('audioStatus');
+            const icon = document.getElementById('audioIcon');
+
+            if (!audioMuted) {
+                status.innerText = "Som On 🔊";
+                icon.className = "fas fa-volume-high text-spidey-oscorpCyan";
+                playWebAudio();
+            } else {
+                status.innerText = "Som Off 🔇";
+                icon.className = "fas fa-volume-xmark";
+            }
+        }
+
+        /* ============================================================
+           2. CARTAS & CONTEÚDO DOS TEXTOS
+           ============================================================ */
+        const notesData = {
+            1: {
+                header: "DOSSIÊ #01 // VIBE & ENERGIA",
+                title: "Sua alegria contagiante",
+                body: `Sabe aquele tipo de presença que muda o clima do ambiente pra melhor na mesma hora? É exatamente o que acontece com você Dany.
+
+Desde o momento em que começamos a conversar mais, a nos aproximarmos no primeiro período, sempre foi muito legal ver o quanto você é descontraída, tem um humor compatível ao meu e consegue deixar qualquer dia simples muito mais divertido. Se fossemos Peter e MJ, com toda certeza eu iria observar por cima dos prédios como fica linda saindo de vestido, scrub, calça, cropped e até mesmo com a blusa do flamengo. 
+
+Que esse seu novo ano mantenha essa sua essência e traga momentos tão incríveis quanto você!`
+            },
+            2: {
+                header: "DOSSIÊ #02 // ESTILO & FOTOGRAFIA",
+                title: "Visão de Câmera 📸",
+                body: `Se eu fosse fotógrafo, você com certeza seria a foto perfeita pra as capas das minhas revistas. E com toda certeza teria foto sua no meu espelho. Assim, todo dia eu poderia te admirar.
+
+Seu gosto para música, seu jeito único de se vestir e a forma como você trata as pessoas ao seu redor são coisas lindas de ver.
+
+Continue sendo exatamente quem você é Dany, quem eu me apaixono cada dia mais!`
+            },
+            3: {
+                header: "DOSSIÊ #03 // NOVO CICLO",
+                title: "Feliz Aniversário!",
+                body: `Hoje o dia é todo dedicado a você Dany!
+
+Desejo que o seu novo ano traga viagens inesquecíveis, mais músicas que te tragam euforia e muitos motivos reais para dar aquela risada linda e gostosa de ouvir.
+Mesmo sem disparar teias você me envolveu em um romance que nunca pensaria que iria viver algo igual. 
+Você é uma pessoa incível. Aproveite muito o seu dia meu bem!`
+            }
+        };
+
+        function openNote(id) {
+            const data = notesData[id];
+            if(!data) return;
+
+            document.getElementById('noteHeader').innerText = data.header;
+            document.getElementById('noteTitle').innerText = data.title;
+            document.getElementById('noteBody').innerText = data.body;
+
+            const modal = document.getElementById('noteModal');
+            const content = document.getElementById('noteModalContent');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+
+            playWebAudio();
+        }
+
+        function closeNote() {
+            const modal = document.getElementById('noteModal');
+            const content = document.getElementById('noteModalContent');
+
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function openPhotoModal(src, caption) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('modalCaption').innerText = caption;
+
+            const modal = document.getElementById('photoModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 10);
+            
+            playWebAudio();
+        }
+
+        function closePhotoModal() {
+            const modal = document.getElementById('photoModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function triggerSpideySense() {
+            document.body.classList.add('shake-active');
+            setTimeout(() => { document.body.classList.remove('shake-active'); }, 400);
+
+            playWebAudio();
+
+            const modal = document.getElementById('spideySenseModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 10);
+        }
+
+        function closeSpideySense() {
+            const modal = document.getElementById('spideySenseModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        /* ============================================================
+           3. CANVAS INTERACTIVE WEB-SHOOTER PHYSICS
+           ============================================================ */
+        const canvas = document.getElementById('webCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        let webLines = [];
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class WebLine {
+            constructor(startX, startY, targetX, targetY) {
+                this.startX = startX;
+                this.startY = startY;
+                this.targetX = targetX;
+                this.targetY = targetY;
+                this.progress = 0;
+                this.life = 1.0;
+                this.branches = [];
+
+                // Sub-ramos da teia
+                for (let i = 0; i < 5; i++) {
+                    this.branches.push({
+                        offset: Math.random() * 0.8 + 0.1,
+                        length: Math.random() * 50 + 20,
+                        angle: (Math.random() - 0.5) * Math.PI * 0.8
+                    });
+                }
+            }
+
+            update() {
+                if (this.progress < 1) {
+                    this.progress += 0.15;
+                } else {
+                    this.life -= 0.02;
+                }
+            }
+
+            draw() {
+                if (this.life <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.strokeStyle = '#00F0FF';
+                ctx.shadowColor = '#00F0FF';
+                ctx.shadowBlur = 10;
+                ctx.lineWidth = 2;
+
+                const currentX = this.startX + (this.targetX - this.startX) * Math.min(this.progress, 1);
+                const currentY = this.startY + (this.targetY - this.startY) * Math.min(this.progress, 1);
+
+                // Linha principal da teia
+                ctx.beginPath();
+                ctx.moveTo(this.startX, this.startY);
+                ctx.lineTo(currentX, currentY);
+                ctx.stroke();
+
+                // Ramos secundários
+                if (this.progress >= 0.5) {
+                    this.branches.forEach(b => {
+                        const bx = this.startX + (this.targetX - this.startX) * b.offset;
+                        const by = this.startY + (this.targetY - this.startY) * b.offset;
+
+                        const ex = bx + Math.cos(b.angle) * b.length;
+                        const ey = by + Math.sin(b.angle) * b.length;
+
+                        ctx.beginPath();
+                        ctx.moveTo(bx, by);
+                        ctx.lineTo(ex, ey);
+                        ctx.stroke();
+                    });
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function triggerWebShot(event) {
+            // Toca o áudio Homem.mp3
+            playWebAudio();
+
+            // Ponto de origem do disparo (canto inferior da tela)
+            const startX = width / 2;
+            const startY = height;
+
+            const targetX = event.clientX;
+            const targetY = event.clientY;
+
+            webLines.push(new WebLine(startX, startY, targetX, targetY));
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, width, height);
+
+            webLines.forEach((web, index) => {
+                web.update();
+                web.draw();
+                if (web.life <= 0) {
+                    webLines.splice(index, 1);
+                }
+            });
+
+            requestAnimationFrame(animateCanvas);
+        }
+
+        animateCanvas();
+    </script>
+</body>
+</html>
